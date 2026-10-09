@@ -11,7 +11,7 @@ Yunomi is an Expo + React Native + TypeScript app for iOS and Android. This foun
    ```sh
    git clone https://github.com/suzenops/Yunomi.git
    cd Yunomi
-   git checkout codex/expo-foundation
+   git checkout codex/adaptive-companion
    npm ci
    npx expo install --check
    npm start
@@ -61,7 +61,7 @@ On both iOS and Android, try this checklist:
 - `src/theme.ts`: colors and shared typography/layout styles.
 - `tests/`: focused data behavior checks.
 
-Data lives locally in AsyncStorage, under `@yunomi/wellness/v1`. It is not encrypted, synced, or backed up by this app. Removing Expo Go or clearing its app data can erase the journal. There are no accounts, backend calls, analytics, Apple Health, or Android Health Connect integrations. The README's health references remain future plans.
+Data lives locally in AsyncStorage, under `@yunomi/wellness/v1`. It is not encrypted, synced, or backed up by this app. Removing Expo Go or clearing its app data can erase the journal. The optional AI companion adds a Chat tab and authenticated backend. Journal sharing requires explicit consent; see [Companion setup](COMPANION_SETUP.md) for configuration, retention, and testing. There are no analytics, Apple Health, or Android Health Connect integrations. The README's health references remain future plans.
 
 Before a store release, add app icons/splash assets, unique bundle identifiers, privacy/data controls, and a production build configuration. This is a foundation, not a store submission.
 

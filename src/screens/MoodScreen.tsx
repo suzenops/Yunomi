@@ -1,12 +1,43 @@
 import { useEffect, useState } from "react";
-import { Pressable, Text, TextInput, View } from "react-native";
+import { Alert, Pressable, Text, TextInput, View } from "react-native";
+import type { BottomTabScreenProps } from "@react-navigation/bottom-tabs";
+import type { TabParamList } from "../navigation/AppNavigator";
+import { useChat } from "../chat/ChatContext";
+import { privacyText } from "../../shared/conversation";
 import { Screen } from "../components/Screen";
 import { Button } from "../components/Button";
 import { useWellness } from "../state/WellnessContext";
 import { moods, type MoodId } from "../utils/wellness";
 import { colors, styles } from "../theme";
 
-export function MoodScreen() {
+export function MoodScreen({
+  navigation,
+}: BottomTabScreenProps<TabParamList, "CheckIn">) {
+  const chat = useChat();
+  function talk() {
+    const saved = data.moods[today];
+    if (!saved) return;
+    const journal = { date: today, mood: saved.mood, note: saved.note };
+    Alert.alert(
+      "Share this check-in with AI?",
+      `${journal.date} · ${journal.mood}\n${journal.note || "No note added."}\n\n${privacyText}\n\nThis starts a fresh conversation with this entry.`,
+      [
+        { text: "Keep it private", style: "cancel" },
+        {
+          text: "Share and talk",
+          onPress: () => {
+            chat.clear();
+            chat.grantConsent();
+            navigation.navigate("Chat");
+            void chat.send(
+              "Please acknowledge my check-in and help me talk about it.",
+              journal,
+            );
+          },
+        },
+      ],
+    );
+  }
   const { data, today, checkIn } = useWellness();
   const entry = data.moods[today];
   const [selected, setSelected] = useState<MoodId | null>(entry?.mood ?? null);
@@ -128,6 +159,20 @@ export function MoodScreen() {
           disabled={!selected || busy}
           onPress={() => void save()}
         />
+        {!!entry && (
+          <View style={[styles.card, { backgroundColor: colors.sage }]}>
+            <Text style={styles.body}>
+              Want a response from Yunomi? You can choose to share this saved
+              check-in with the AI companion.
+            </Text>
+            <Button
+              title="Talk to Yunomi"
+              secondary
+              disabled={busy || chat.busy}
+              onPress={talk}
+            />
+          </View>
+        )}
         {!!message && (
           <Text accessibilityLiveRegion="polite" style={styles.body}>
             {message}
