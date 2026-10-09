@@ -1,3 +1,4 @@
+import { ChatProvider } from "./src/chat/ChatContext";
 import { StatusBar } from "expo-status-bar";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 import { WellnessProvider } from "./src/state/WellnessContext";
@@ -8,7 +9,9 @@ export default function App() {
     <SafeAreaProvider>
       <StatusBar style="dark" />
       <WellnessProvider>
-        <AppNavigator />
+        <ChatProvider>
+          <AppNavigator />
+        </ChatProvider>
       </WellnessProvider>
     </SafeAreaProvider>
   );

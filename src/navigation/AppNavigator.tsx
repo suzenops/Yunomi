@@ -1,6 +1,8 @@
 import { DefaultTheme, NavigationContainer } from "@react-navigation/native";
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
 import { Text } from "react-native";
+import { ChatScreen } from "../screens/ChatScreen";
+import type { Journal } from "../chat/conversation";
 import { HomeScreen } from "../screens/HomeScreen";
 import { MoodScreen } from "../screens/MoodScreen";
 import { HabitsScreen } from "../screens/HabitsScreen";
@@ -10,9 +12,10 @@ export type TabParamList = {
   Home: undefined;
   CheckIn: undefined;
   Habits: undefined;
+  Chat: { journal?: Journal } | undefined;
 };
 const Tab = createBottomTabNavigator<TabParamList>();
-const icons = { Home: "⌂", CheckIn: "◐", Habits: "✓" };
+const icons = { Home: "⌂", CheckIn: "◐", Habits: "✓", Chat: "♡" };
 
 export function AppNavigator() {
   return (
@@ -65,6 +68,11 @@ export function AppNavigator() {
           name="Habits"
           component={HabitsScreen}
           options={{ title: "Habits" }}
+        />
+        <Tab.Screen
+          name="Chat"
+          component={ChatScreen}
+          options={{ title: "Chat" }}
         />
       </Tab.Navigator>
     </NavigationContainer>
