@@ -11,7 +11,7 @@ Yunomi is an Expo + React Native + TypeScript app for iOS and Android. This foun
    ```sh
    git clone https://github.com/suzenops/Yunomi.git
    cd Yunomi
-   git checkout codex/expo-foundation
+   git checkout main
    npm ci
    npx expo install --check
    npm start
@@ -40,7 +40,7 @@ npx expo export --platform android --output-dir dist/android
 
 On both iOS and Android, try this checklist:
 
-- Navigate through all three tabs; home buttons should open the matching tab.
+- Navigate through all four tabs; home buttons should open the matching tab.
 - Pick a mood, add a note, save, and verify it appears on Home and in Recent moments.
 - Update today's check-in; it should replace that entry, not create a second one.
 - Complete and undo a habit. Verify the home count updates.
@@ -54,14 +54,14 @@ On both iOS and Android, try this checklist:
 
 - `App.tsx`: safe areas, status bar, shared state, navigation.
 - `src/navigation/`: typed bottom tabs with fade transitions.
-- `src/screens/`: Home, Check-in, Habits; one file per screen.
+- `src/screens/`: Home, Check-in, Habits, Chat; one file per screen.
 - `src/components/`: shared screen layout and button.
 - `src/state/`: data loading and serialized saves; errors keep existing data intact.
 - `src/utils/`: data types and pure date, mood, habit, and validation functions.
 - `src/theme.ts`: colors and shared typography/layout styles.
 - `tests/`: focused data behavior checks.
 
-Data lives locally in AsyncStorage, under `@yunomi/wellness/v1`. It is not encrypted, synced, or backed up by this app. Removing Expo Go or clearing its app data can erase the journal. There are no accounts, backend calls, analytics, Apple Health, or Android Health Connect integrations. The README's health references remain future plans.
+Data lives locally in AsyncStorage, under `@yunomi/wellness/v1`. It is not encrypted, synced, or backed up by this app. Removing Expo Go or clearing its app data can erase the journal. There are no accounts, analytics, Apple Health, or Android Health Connect integrations. The optional AI companion adds consent-based backend calls; see [AI companion setup](AI_COMPANION.md) for server configuration, privacy controls, and required device validation. The README's health references remain future plans.
 
 Before a store release, add app icons/splash assets, unique bundle identifiers, privacy/data controls, and a production build configuration. This is a foundation, not a store submission.
 

@@ -36,3 +36,7 @@ Currently in early development. More to come.
 *Less pressure. More understanding.*
 
 **Yunomi. Your life, in perspective.**
+
+## Adaptive AI companion
+
+The Chat tab adds optional listening, encouragement, and planning, plus consent-based check-in sharing. See [setup, data retention, and testing instructions](docs/AI_COMPANION.md). AI behavior remains unverified until the backend is configured and a real conversation is tested on a device.

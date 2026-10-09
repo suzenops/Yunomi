@@ -1,3 +1,5 @@
+import type { BottomTabScreenProps } from "@react-navigation/bottom-tabs";
+import type { TabParamList } from "../navigation/AppNavigator";
 import { useEffect, useState } from "react";
 import { Pressable, Text, TextInput, View } from "react-native";
 import { Screen } from "../components/Screen";
@@ -6,7 +8,9 @@ import { useWellness } from "../state/WellnessContext";
 import { moods, type MoodId } from "../utils/wellness";
 import { colors, styles } from "../theme";
 
-export function MoodScreen() {
+export function MoodScreen({
+  navigation,
+}: BottomTabScreenProps<TabParamList, "CheckIn">) {
   const { data, today, checkIn } = useWellness();
   const entry = data.moods[today];
   const [selected, setSelected] = useState<MoodId | null>(entry?.mood ?? null);
@@ -132,6 +136,17 @@ export function MoodScreen() {
           <Text accessibilityLiveRegion="polite" style={styles.body}>
             {message}
           </Text>
+        )}
+        {!!message && entry && (
+          <Button
+            title="Talk to Yunomi"
+            secondary
+            onPress={() =>
+              navigation.navigate("Chat", {
+                journal: { mood: entry.mood, note: entry.note },
+              })
+            }
+          />
         )}
         {!!error && (
           <Text accessibilityRole="alert" style={styles.error}>
