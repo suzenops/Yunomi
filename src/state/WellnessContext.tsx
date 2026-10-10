@@ -17,7 +17,7 @@ import {
   type MoodId,
   type WellnessData,
 } from "../utils/wellness";
-import { colors, styles } from "../theme";
+import { useTheme } from "../theme";
 import { Button } from "../components/Button";
 
 const STORAGE_KEY = "@yunomi/wellness/v1";
@@ -32,6 +32,7 @@ type WellnessContextValue = {
 const WellnessContext = createContext<WellnessContextValue | null>(null);
 
 export function WellnessProvider({ children }: { children: ReactNode }) {
+  const { colors, styles } = useTheme();
   const [data, setData] = useState(initialData);
   const current = useRef(data);
   const queue = useRef<Promise<void>>(Promise.resolve());

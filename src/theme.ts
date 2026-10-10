@@ -1,55 +1,69 @@
-import { StyleSheet } from "react-native";
-
-export const colors = {
-  background: "#F7F8F2",
-  surface: "#FFFFFF",
-  text: "#253D35",
-  muted: "#63736C",
-  primary: "#426A57",
-  sage: "#E4EDE3",
-  lavender: "#EEE9F4",
-  peach: "#F9E9DA",
-  border: "#DDE5DA",
-  danger: "#963B38",
-};
-
-export const styles = StyleSheet.create({
-  title: {
-    fontSize: 32,
-    fontWeight: "700",
-    color: colors.text,
-    letterSpacing: -0.8,
-  },
-  heading: { fontSize: 21, fontWeight: "600", color: colors.text },
-  body: { fontSize: 16, lineHeight: 25, color: colors.muted },
-  eyebrow: {
-    fontSize: 12,
-    fontWeight: "700",
-    letterSpacing: 2,
-    color: colors.primary,
-  },
-  card: {
-    backgroundColor: colors.surface,
-    padding: 24,
-    borderRadius: 24,
-    gap: 14,
-    borderWidth: 1,
-    borderColor: colors.border,
-  },
-  row: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    gap: 12,
-  },
-  input: {
-    backgroundColor: colors.surface,
-    borderWidth: 1,
-    borderColor: colors.border,
-    borderRadius: 16,
-    padding: 16,
-    fontSize: 16,
-    color: colors.text,
-  },
-  error: { color: colors.danger, fontSize: 14, lineHeight: 21 },
-});
+import { Platform, StyleSheet } from "react-native";
+import { palettes, type Palette } from "./design/palette";
+export { palettes, type Palette } from "./design/palette";
+export function createStyles(colors: Palette, fontsLoaded: boolean) {
+  const editorial = fontsLoaded
+    ? "CormorantGaramond_400Regular"
+    : Platform.select({ ios: "Georgia", android: "serif", default: "Georgia" });
+  const sans = fontsLoaded ? "Manrope_400Regular" : undefined;
+  return StyleSheet.create({
+    title: {
+      fontFamily: editorial,
+      fontSize: 44,
+      lineHeight: 49,
+      color: colors.text,
+      letterSpacing: -1.1,
+    },
+    heading: {
+      fontFamily: editorial,
+      fontSize: 28,
+      lineHeight: 33,
+      color: colors.text,
+    },
+    body: {
+      fontFamily: sans,
+      fontSize: 14,
+      lineHeight: 23,
+      color: colors.muted,
+    },
+    eyebrow: {
+      fontFamily: sans,
+      fontSize: 10,
+      fontWeight: "600",
+      letterSpacing: 2.6,
+      color: colors.text,
+    },
+    card: {
+      backgroundColor: colors.glass,
+      padding: 22,
+      borderRadius: 26,
+      gap: 14,
+      borderWidth: 1,
+      borderColor: colors.border,
+    },
+    row: {
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent: "space-between",
+      gap: 12,
+    },
+    input: {
+      fontFamily: sans,
+      backgroundColor: colors.subtle,
+      borderWidth: 1,
+      borderColor: colors.stroke,
+      borderRadius: 22,
+      padding: 17,
+      fontSize: 15,
+      lineHeight: 23,
+      color: colors.text,
+    },
+    error: {
+      fontFamily: sans,
+      color: colors.danger,
+      fontSize: 13,
+      lineHeight: 21,
+    },
+  });
+}
+export { useTheme } from "./design/ThemeProvider";
