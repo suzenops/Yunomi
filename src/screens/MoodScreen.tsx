@@ -1,18 +1,24 @@
 import { useEffect, useState } from "react";
-import { Alert, Pressable, Text, TextInput, View } from "react-native";
+import { Alert, Text, TextInput, View } from "react-native";
 import type { BottomTabScreenProps } from "@react-navigation/bottom-tabs";
 import type { TabParamList } from "../navigation/AppNavigator";
 import { useChat } from "../chat/ChatContext";
 import { privacyText } from "../../shared/conversation";
+import { GlassCard } from "../design/GlassCard";
+import { Orb } from "../design/Orb";
+import { MoodSelector } from "../design/MoodSelector";
+import { PageHeading } from "../design/Typography";
 import { Screen } from "../components/Screen";
 import { Button } from "../components/Button";
 import { useWellness } from "../state/WellnessContext";
 import { moods, type MoodId } from "../utils/wellness";
-import { colors, styles } from "../theme";
+import { useTheme } from "../theme";
 
 export function MoodScreen({
   navigation,
+  route,
 }: BottomTabScreenProps<TabParamList, "CheckIn">) {
+  const { colors, styles } = useTheme();
   const chat = useChat();
   function talk() {
     const saved = data.moods[today];
@@ -52,6 +58,14 @@ export function MoodScreen({
     setMessage("");
     setError("");
   }, [today]);
+  useEffect(() => {
+    const initialMood = route.params?.initialMood;
+    if (initialMood) {
+      setSelected(initialMood);
+      setMessage("");
+      navigation.setParams({ initialMood: undefined });
+    }
+  }, [route.params?.initialMood, navigation]);
   async function save() {
     if (!selected || busy) return;
     setBusy(true);
@@ -72,65 +86,42 @@ export function MoodScreen({
     .sort(([a], [b]) => b.localeCompare(a))
     .slice(0, 7);
   return (
-    <Screen>
-      <Text style={styles.eyebrow}>A MOMENT FOR YOU</Text>
-      <View style={{ gap: 10 }}>
-        <Text style={styles.title}>How do you feel?</Text>
-        <Text style={styles.body}>
-          There’s no right answer. Choose what feels closest to you today.
-        </Text>
-      </View>
-      <View style={[styles.card, { backgroundColor: colors.lavender }]}>
-        <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 10 }}>
-          {moods.map((mood) => (
-            <Pressable
-              key={mood.id}
-              accessibilityRole="radio"
-              accessibilityLabel={mood.label}
-              accessibilityState={{
-                selected: selected === mood.id,
-                disabled: busy,
-              }}
-              disabled={busy}
-              onPress={() => {
-                setSelected(mood.id);
-                setMessage("");
-              }}
-              style={({ pressed }) => ({
-                flexGrow: 1,
-                minWidth: 78,
-                padding: 14,
-                borderRadius: 18,
-                alignItems: "center",
-                gap: 8,
-                backgroundColor:
-                  selected === mood.id ? colors.primary : colors.surface,
-                opacity: pressed ? 0.8 : 1,
-              })}
-            >
-              <Text
-                style={{
-                  fontSize: 28,
-                  color: selected === mood.id ? colors.surface : colors.primary,
-                }}
-              >
-                {mood.symbol}
-              </Text>
-              <Text
-                style={{
-                  fontSize: 14,
-                  color: selected === mood.id ? colors.surface : colors.text,
-                }}
-              >
-                {mood.label}
-              </Text>
-            </Pressable>
-          ))}
-        </View>
-      </View>
-      <View style={{ gap: 10 }}>
-        <Text style={styles.heading}>Want to say a little more?</Text>
-        <Text style={styles.body}>An optional note, just for you.</Text>
+    <Screen
+      background="liquid"
+      footer={
+        <Button
+          title={
+            busy
+              ? "Saving…"
+              : entry
+                ? "Update today’s check-in"
+                : "Save this moment"
+          }
+          disabled={!selected || busy}
+          onPress={() => void save()}
+          icon="arrow"
+        />
+      }
+    >
+      <PageHeading
+        eyebrow="A moment for you"
+        title={"How do you feel,\nright now?"}
+        subtitle="There’s room for every feeling. Let this moment be yours."
+      />
+      <Orb />
+      <GlassCard padding={18}>
+        <MoodSelector
+          value={selected}
+          disabled={busy}
+          onChange={(mood) => {
+            setSelected(mood);
+            setMessage("");
+          }}
+        />
+      </GlassCard>
+      <GlassCard>
+        <Text style={styles.eyebrow}>A PRIVATE REFLECTION</Text>
+        <Text style={styles.heading}>What’s on your mind?</Text>
         <TextInput
           accessibilityLabel="Optional mood note"
           multiline
@@ -141,64 +132,66 @@ export function MoodScreen({
             setNote(value);
             setMessage("");
           }}
-          placeholder="What’s on your mind?"
+          placeholder="A thought, a feeling, a little of today…"
           placeholderTextColor={colors.muted}
-          style={[styles.input, { minHeight: 130, textAlignVertical: "top" }]}
+          style={[styles.input, { minHeight: 128, textAlignVertical: "top" }]}
         />
-        <Text style={[styles.body, { fontSize: 12, textAlign: "right" }]}>
-          {note.length}/500
+        <Text style={[styles.body, { fontSize: 10, textAlign: "right" }]}>
+          {note.length}/500 · ONLY SHARED IF YOU CHOOSE
         </Text>
-        <Button
-          title={
-            busy
-              ? "Saving…"
-              : entry
-                ? "Update today’s check-in"
-                : "Save today’s check-in"
-          }
-          disabled={!selected || busy}
-          onPress={() => void save()}
-        />
-        {!!entry && (
-          <View style={[styles.card, { backgroundColor: colors.sage }]}>
-            <Text style={styles.body}>
-              Want a response from Yunomi? You can choose to share this saved
-              check-in with the AI companion.
-            </Text>
+      </GlassCard>
+      {!!message && (
+        <Text accessibilityLiveRegion="polite" style={styles.body}>
+          {message}
+        </Text>
+      )}
+      {!!error && (
+        <Text accessibilityRole="alert" style={styles.error}>
+          {error}
+        </Text>
+      )}
+      {!!entry && (
+        <GlassCard>
+          <Text style={styles.heading}>A little perspective.</Text>
+          <Text style={styles.body}>
+            If you’d like a response, choose to share this saved moment with
+            Yunomi.
+          </Text>
+          <Button
+            title="Talk to Yunomi"
+            secondary
+            icon="arrow"
+            disabled={busy || chat.busy}
+            onPress={talk}
+          />
+        </GlassCard>
+      )}
+      {recent.length > 0 && (
+        <GlassCard>
+          <View style={styles.row}>
+            <Text style={styles.eyebrow}>RECENT MOMENTS</Text>
             <Button
-              title="Talk to Yunomi"
+              title="Journal"
               secondary
-              disabled={busy || chat.busy}
-              onPress={talk}
+              onPress={() => navigation.navigate("Journal")}
             />
           </View>
-        )}
-        {!!message && (
-          <Text accessibilityLiveRegion="polite" style={styles.body}>
-            {message}
-          </Text>
-        )}
-        {!!error && (
-          <Text accessibilityRole="alert" style={styles.error}>
-            {error}
-          </Text>
-        )}
-      </View>
-      {recent.length > 0 && (
-        <View style={styles.card}>
-          <Text style={styles.heading}>Recent moments</Text>
           {recent.map(([day, saved]) => (
-            <View key={day} style={{ gap: 4 }}>
-              <Text style={{ color: colors.text, fontWeight: "600" }}>
+            <View key={day} style={{ gap: 4, paddingVertical: 6 }}>
+              <Text style={[styles.body, { color: colors.text }]}>
                 {day === today
                   ? "Today"
                   : new Date(`${day}T12:00:00`).toLocaleDateString()}{" "}
                 · {moods.find((mood) => mood.id === saved.mood)?.label}
               </Text>
-              {!!saved.note && <Text style={styles.body}>{saved.note}</Text>}
+              {!!saved.note && (
+                <Text selectable style={styles.body}>
+                  {saved.note}
+                </Text>
+              )}
             </View>
           ))}
-        </View>
+        </GlassCard>
       )}
     </Screen>
   );
