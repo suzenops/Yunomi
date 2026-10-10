@@ -20,6 +20,13 @@ export type Dependencies = {
   generate: (request: ChatRequest, user: string) => Promise<ChatReply>;
   now?: () => number;
 };
+export class ProviderError extends Error {
+  code: string;
+  constructor(code: string) {
+    super("AI provider request failed");
+    this.code = code;
+  }
+}
 const json = (status: number, body: unknown) =>
   new Response(JSON.stringify(body), {
     status,
@@ -47,24 +54,38 @@ export function makeHandler(deps: Dependencies, maxDaily = 1000) {
       .get("Authorization")
       ?.match(/^Bearer ([A-Za-z0-9._-]+)$/)?.[1];
     if (!token || token.length > 4096)
-      return json(401, { error: "A valid session is required." });
+      return json(401, {
+        code: "auth_failed",
+        error: "A valid session is required.",
+      });
     let user: string | null;
     try {
       user = await deps.authenticate(token);
     } catch {
       return json(503, {
+        code: "auth_unavailable",
         error: "Sign-in is temporarily unavailable. Try again.",
       });
     }
-    if (!user) return json(401, { error: "Your session expired. Try again." });
+    if (!user)
+      return json(401, {
+        code: "auth_failed",
+        error: "Your session expired. Try again.",
+      });
     const now = (deps.now ?? Date.now)();
     for (const [key, entry] of counters)
       if (entry.until <= now) counters.delete(key);
     if (!counters.has(user) && counters.size >= 10000)
-      return json(503, { error: "Yunomi is busy. Try again soon." });
+      return json(503, {
+        code: "backend_unavailable",
+        error: "Yunomi is busy. Try again soon.",
+      });
     const counter = counters.get(user) ?? { count: 0, until: now + 60000 };
     if (++counter.count > 10)
-      return json(429, { error: "Please pause a moment before trying again." });
+      return json(429, {
+        code: "rate_limited",
+        error: "Please pause a moment before trying again.",
+      });
     counters.set(user, counter);
     const currentDay = new Date(now).toISOString().slice(0, 10);
     if (day !== currentDay) {
@@ -73,18 +94,23 @@ export function makeHandler(deps: Dependencies, maxDaily = 1000) {
     }
     if (used >= maxDaily || active.size >= 20 || active.has(user))
       return json(429, {
+        code: "rate_limited",
         error: "Yunomi is at its request limit. Please try later.",
       });
     if (!request.headers.get("Content-Type")?.startsWith("application/json"))
-      return json(415, { error: "JSON is required." });
+      return json(415, { code: "invalid_request", error: "JSON is required." });
     let body: ChatRequest;
     try {
       const raw = await request.text();
       if (new TextEncoder().encode(raw).length > 24000)
-        return json(413, { error: "Message is too large." });
+        return json(413, {
+          code: "invalid_request",
+          error: "Message is too large.",
+        });
       body = validateRequest(JSON.parse(raw));
     } catch {
       return json(400, {
+        code: "invalid_request",
         error: "Check the message and sharing consent, then try again.",
       });
     }
@@ -95,8 +121,12 @@ export function makeHandler(deps: Dependencies, maxDaily = 1000) {
       if (obviousUrgency(latest + " " + (body.journal?.note ?? "")))
         return json(200, urgentReply);
       return json(200, await deps.generate(body, user));
-    } catch {
+    } catch (error) {
       return json(502, {
+        code:
+          error instanceof ProviderError
+            ? error.code
+            : "provider_invalid_response",
         error: "Yunomi couldn’t reply right now. Please try again.",
       });
     } finally {
@@ -109,17 +139,33 @@ export function liveDependencies(
   fetcher: typeof fetch = fetch,
 ): Dependencies {
   async function provider(path: string, body: unknown) {
-    const response = await fetcher(`https://api.openai.com/v1/${path}`, {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${config.apiKey}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify(body),
-      signal: AbortSignal.timeout(20000),
-    });
-    if (!response.ok) throw new Error("Provider unavailable");
-    return response.json();
+    let response: Response;
+    try {
+      response = await fetcher(`https://api.openai.com/v1/${path}`, {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${config.apiKey}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(body),
+        signal: AbortSignal.timeout(20000),
+      });
+    } catch {
+      throw new ProviderError("provider_unavailable");
+    }
+    if (!response.ok) {
+      if (response.status === 401 || response.status === 403)
+        throw new ProviderError("provider_auth");
+      if (response.status === 429) throw new ProviderError("provider_limit");
+      if (response.status === 400 || response.status === 404)
+        throw new ProviderError("provider_configuration");
+      throw new ProviderError("provider_unavailable");
+    }
+    try {
+      return await response.json();
+    } catch {
+      throw new ProviderError("provider_invalid_response");
+    }
   }
   return {
     async authenticate(token) {

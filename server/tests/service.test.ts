@@ -223,3 +223,46 @@ test("ingress limits anonymous traffic before authentication", async () => {
   now += 60001;
   assert.equal(allow("one-address"), true);
 });
+
+test("provider credential, quota, model, and availability errors have safe machine-readable codes", async () => {
+  for (const [status, code] of [
+    [401, "provider_auth"],
+    [403, "provider_auth"],
+    [429, "provider_limit"],
+    [404, "provider_configuration"],
+    [500, "provider_unavailable"],
+  ] as const) {
+    const live = liveDependencies(config, async () =>
+      Response.json({ error: "PRIVATE KEY OR PROVIDER DETAILS" }, { status }),
+    );
+    const handler = makeHandler({
+      authenticate: async () => "user",
+      generate: live.generate,
+    });
+    const response = await handler(request());
+    assert.equal(response.status, 502);
+    const body = await response.json();
+    assert.equal(body.code, code);
+    assert.doesNotMatch(JSON.stringify(body), /PRIVATE/);
+  }
+});
+test("Supabase outages differ from expired sessions and do not call OpenAI", async () => {
+  const invalid = makeHandler({
+    authenticate: async () => null,
+    generate: async () => {
+      throw new Error("Must not generate");
+    },
+  });
+  assert.equal((await (await invalid(request())).json()).code, "auth_failed");
+  const failed = makeHandler({
+    authenticate: async () => {
+      throw new Error("PRIVATE");
+    },
+    generate: async () => {
+      throw new Error("Must not generate");
+    },
+  });
+  const response = await failed(request());
+  assert.equal(response.status, 503);
+  assert.equal((await response.json()).code, "auth_unavailable");
+});

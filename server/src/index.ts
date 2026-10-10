@@ -11,9 +11,14 @@ if (
   authUrl.protocol !== "https:" ||
   authUrl.username ||
   authUrl.password ||
-  authUrl.pathname !== "/"
+  authUrl.pathname !== "/" ||
+  authUrl.search ||
+  authUrl.hash
 )
   throw new Error("SUPABASE_URL must be an HTTPS origin");
+const port = Number(process.env.PORT ?? 8787);
+if (!Number.isSafeInteger(port) || port < 1 || port > 65535)
+  throw new Error("PORT must be between 1 and 65535");
 const maxDaily = Number(process.env.MAX_DAILY_REQUESTS ?? 1000);
 if (!Number.isSafeInteger(maxDaily) || maxDaily < 1)
   throw new Error("Invalid daily request limit");
@@ -33,7 +38,7 @@ const server = createServer(async (incoming, outgoing) => {
       "Cache-Control": "no-store",
       "Content-Type": "application/json",
     });
-    outgoing.end('{"error":"Please try again later."}');
+    outgoing.end('{"code":"rate_limited","error":"Please try again later."}');
     incoming.resume();
     return;
   }
@@ -44,7 +49,9 @@ const server = createServer(async (incoming, outgoing) => {
       bytes += chunk.length;
       if (bytes > 24000) {
         outgoing.writeHead(413, { "Cache-Control": "no-store" });
-        outgoing.end('{"error":"Message is too large."}');
+        outgoing.end(
+          '{"code":"invalid_request","error":"Message is too large."}',
+        );
         incoming.resume();
         return;
       }
@@ -66,17 +73,16 @@ const server = createServer(async (incoming, outgoing) => {
     outgoing.end(await response.text());
   } catch {
     outgoing.writeHead(500, { "Cache-Control": "no-store" });
-    outgoing.end('{"error":"Request could not be completed."}');
+    outgoing.end(
+      '{"code":"backend_unavailable","error":"Request could not be completed."}',
+    );
   }
 });
 server.requestTimeout = 15000;
 server.headersTimeout = 10000;
 server.maxConnections = 100;
-server.listen(
-  Number(process.env.PORT ?? 8787),
-  process.env.HOST ?? "127.0.0.1",
-  () =>
-    console.log(
-      "Companion backend started; live device verification still required.",
-    ),
+server.listen(port, process.env.HOST ?? "127.0.0.1", () =>
+  console.log(
+    "Companion backend started; live device verification still required.",
+  ),
 );

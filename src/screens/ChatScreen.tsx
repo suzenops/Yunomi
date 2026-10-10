@@ -11,7 +11,12 @@ import {
 import { Screen } from "../components/Screen";
 import { Button } from "../components/Button";
 import { useChat } from "../chat/ChatContext";
-import { companionConfigured, resetConnection } from "../services/companionApi";
+import {
+  companionConfigured,
+  companionConfigurationIssues,
+  companionConfigurationWarnings,
+  resetConnection,
+} from "../services/companionApi";
 import { privacyText, type ConversationPath } from "../../shared/conversation";
 import { colors, styles } from "../theme";
 const choices: { path: ConversationPath; label: string }[] = [
@@ -79,11 +84,18 @@ export function ChatScreen() {
         <View style={[styles.card, { backgroundColor: colors.peach }]}>
           <Text style={styles.heading}>AI connection not configured</Text>
           <Text style={styles.body}>
-            Chat needs a configured backend before Yunomi can reply. Your
-            check-ins and habits still work.
+            {companionConfigurationIssues.join("\n\n")}
+            {
+              "\n\nRestart Expo with --clear after editing the root .env. Your check-ins and habits still work."
+            }
           </Text>
         </View>
       )}
+      {companionConfigurationWarnings.map((warning) => (
+        <Text key={warning} style={styles.body}>
+          {warning}
+        </Text>
+      ))}
       <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8 }}>
         {choices.map((choice) => (
           <Pressable

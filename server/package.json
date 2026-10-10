@@ -4,9 +4,10 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "start": "node --env-file=.env --experimental-strip-types src/index.ts",
+    "start": "node --use-env-proxy --env-file=.env --experimental-strip-types src/index.ts",
     "typecheck": "tsc --noEmit",
-    "test": "node --experimental-strip-types --test tests/*.test.ts"
+    "test": "node --experimental-strip-types --test tests/*.test.ts",
+    "verify:live": "node --use-env-proxy --env-file=../.env --experimental-strip-types scripts/verify-live.ts"
   },
   "devDependencies": {
     "@types/node": "^24.0.0",
