@@ -11,6 +11,8 @@ Fill this in only after testing real conversations against the configured backen
 | Backend deployment / commit                       | Pending | Pending |
 | Provider / model                                  | Pending | Pending |
 | Personalized check-in response received           | Pending | Pending |
+| HTTPS tunnel reachable from iPhone Safari         | Pending | Pending |
+| Anonymous sign-in + backend authorization         | Pending | Pending |
 | Second conversational turn received               | Pending | Pending |
 | Consent and cancelled sharing verified            | Pending | Pending |
 | Paths and mixed emotions reviewed                 | Pending | Pending |
